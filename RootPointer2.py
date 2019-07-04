@@ -11,6 +11,28 @@ Prescription: .VARIABLES, .MethodsUsed()
 
 import numpy as np
 class lattice:
+    """
+    Methods:
+        __init__
+            ListIndex
+        AddCell
+            ListNeighborRoot
+                RootOf
+            BC_P #called by many methods, boundary condition imposed
+            CheckDuplicated
+            DefRootOfCell
+            RefreshDIR
+            CheckPercolation
+    Variables
+        L
+        GRID
+        DIRX
+        DIRY
+        ROOTSTATS
+        POSX
+        POSY
+        ALLINDEX
+    """
     def __init__(self,LL):
         """ 
         Initialize an empty lattice.
@@ -253,3 +275,42 @@ def one_run(L):
 #ax.legend(loc="upper left")
 #ax.set_xlabel('Grid size (L)')
 #ax.set_ylabel('Run time (s)')
+
+def one_run_stats(L): 
+    """"One sample"""
+    N = L*L
+    Q = lattice(L)
+    STATS = np.zeros((N-1,3))
+    
+    for n in range(N-1): 
+        #modifying the number of occupied cells
+        Q.AddCell()
+        aux = Q.ROOTSTATS.copy()
+        NonPerc = []
+        Perc = []
+        for each in aux:
+            if aux[each][1]==0 : NonPerc += [aux[each][0]]
+            else : Perc += [aux[each][0]]
+        npNonPerc = np.array(NonPerc)
+        aux0 = npNonPerc.sum()
+        aux1 = (npNonPerc*npNonPerc).sum()
+        STATS[n] = (np.array(Perc).sum()/(n+1), aux0 , aux1)
+    return STATS
+
+def avg_stats(L,samples): 
+    AvgStats = np.zeros((L*L-1,3))
+    for run in range(samples):
+        AvgStats += one_run_stats(L)
+    return AvgStats/samples
+
+import time
+def data_save():
+    S0=50 #number of samples
+    L_range = np.linspace(10,2000,100,dtype=int)    
+    
+    for L0 in L_range:
+        RunTime = time.time()
+        RunData = avg_stats(L0,S0)
+        RunTime = time.time()-RunTime
+        np.savetxt("AvgStats_L%i_Samples%i.dat"%(L0,S0),RunData,header = "Average Stats; Grid Size (L) = %i; Number of Samples= %i; Elapsed Time = %5.1E \n Columns: P_inf, l nl, l2 nl"%(L0,S0,RunTime))
+    return
