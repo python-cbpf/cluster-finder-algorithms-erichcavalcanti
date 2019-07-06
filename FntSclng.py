@@ -55,7 +55,12 @@ import time
 def MakeDataP(range_p,file,kind):
     """Range of p to be used. 
     Name of the file. 
-    Column desired: 0 - P_\inf, 1 - \chi"""
+    Column desired: 0 - P_\inf, 1 - \chi    
+    
+    ## It would be better if INSTEAD of saving in the end, I wrote line by line in the file.
+    This way, I could avoid complete loss if code stops.
+    
+    """
     
     L_range = np.linspace(10,2000,100,dtype=int)
     L_range = L_range[:16] #Restriction to the input we have
@@ -263,33 +268,84 @@ for betanu in np.arange(0,.1,.0001):
 #        betanu_l.append(betanu)
 
 
-"-------------------------- To Do : \nu----------------------------------------"
-"Plot of L^{\gamma/\nu} \chi"
+"""-------------------------- To Do : \nu--------------------------------------
+Plot of L^{\gamma/\nu} \chi vs (p-pc)/pc
+
+
+choose a arbitrary \tilde \chi which determines an array \rho
+with this, make the plot
+
+\ln \rho = -1/\nu \ln L + residues
+
+compare with other arbitrary choices of \tilde \chi
+"""
 
 range_p = np.linspace(.1,.9,100)
 data_p = MakeDataP(range_p,"Chi_p",1)
 
+"import"
 L_range = np.linspace(10,2000,100,dtype=int)
-L_range = L_range[:4] #Restriction to the input we have
+L_range = L_range[:16] #Restriction to the input we have
 alldata = np.loadtxt("Chi_p.dat")
 range_p = alldata[0]
 data_p = alldata[1:]
 
-gammanu = 1.71 # \pm 0.02. O valor real seria 1.76
-
+"rescaling"
+gammanu = 1.78 # \pm 0.02. O valor real seria 1.76 (qual a fonte dessa info???)
 data_p_scale = data_p.copy()
 for i in range(len(L_range)):
-#    factor = 1/peakdata[i][1]
     factor = np.power(L_range[i],-gammanu)
     data_p_scale[i] = factor*np.array(data_p[i])
 
-for data in data_p:
-    plt.plot(range_p,data)    
+"plot"
+for data in data_p_scale:
+    plt.plot(range_p,data,'o-')    
 plt.grid(True)
-plt.xlim(.58,.6)
+plt.xlim(.5,.65)
 #plt.ylim(-.01,1.1)
 plt.xlabel("$p$",fontsize=14)
-plt.ylabel("$L^{-\gamma/\nu} \chi$",fontsize=14)
+plt.ylabel("$L^{-\\gamma/\\nu} \chi$",fontsize=14)
 plt.show()
 
-"---------------------------------------------------------------------------"
+"""
+parece possível tomar algo como invnu = 0.73 numa estimativa bruta
+    \nu = 1/0.73 = 1.37
+    o esperado era algo como 4/3 = 1.33
+    
+    
+considero que o mais coerente seria traçar uma reta de \tilde \chi fixo e
+ minimizar a distância entre a largura das curvas
+ 
+um modo talvez mais inteligente seria realizar um fit gaussiano das curvas
+ e então tratar esse fit
+
+"""
+
+for invnu in np.arange(.72,.74,.01):
+    "second scaling"
+#    invnu = .7
+    pc = 0.594
+    range_rho = (range_p-pc)/pc
+    range_rho_scale = np.zeros_like(data_p_scale) 
+    #range split and becomes differente for each curve
+    for i in range(len(L_range)):
+        factor = np.power(L_range[i],invnu)
+        range_rho_scale[i] = factor*np.array(range_rho)
+    
+    
+    "plot"
+    for (xvalue,yvalue) in zip(range_rho_scale[1:],data_p_scale[1:]):
+        plt.plot(xvalue,yvalue,'o-')
+    plt.grid(True)
+    plt.xlim(-2.5,2)
+    plt.ylim(.1,.5)
+    plt.xlabel("$(p-p_c)/p_c$",fontsize=14)
+    plt.ylabel("$L^{-\\gamma/\\nu} \chi$",fontsize=14)
+    plt.show()
+
+
+"-------------------------- To Do : \nu----------------------------------------"
+"Plot of L^{-\beta/\nu} P_\inf vs (p-pc)/pc"
+
+range_p = np.linspace(.1,.9,100)
+data_p = MakeDataP(range_p,"Pinf_p",0)
